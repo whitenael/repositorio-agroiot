@@ -1,5 +1,6 @@
 /* 
 VERSION MOLINO V0.1 12/8/2021
+modificaciones pendientes para nueva version, con 2 maestros
 
 */
 
