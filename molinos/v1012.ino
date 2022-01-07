@@ -104,8 +104,9 @@ void loop()
   gsm_sendhttp(12, llenado);
   gsm_recall();
   
-  delay(5*seconds);
+  delay(30*minutes);
   gsm_recall();
+  // chequeamos estado de la conexion antes de volver a iniciar el ciclo
 
   delay(5*seconds);
 
