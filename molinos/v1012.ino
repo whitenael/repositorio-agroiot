@@ -11,6 +11,8 @@
 #define vent1 4
 
 DHT dht(DHTPIN, DHTTYPE);
+
+la implementacion de los DHT es experimental
 */
 // CONVERSOR DE TIEMPO
 #include <SoftwareSerial.h>
