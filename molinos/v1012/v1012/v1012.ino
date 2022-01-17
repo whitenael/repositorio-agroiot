@@ -29,16 +29,12 @@ String apn   = "igprs.claro.com.ar";
 String apn_u = "clarogprs";
 String apn_p = "clarogprs999";
 
-
 // APN ORIGINAL y CONECTIVIDAD PERSONAL
 String apn   = "datos.personal.com";
 String apn_u = "datos";
 String apn_p = "datos";
 
 String apiKey   = "2NE9RSVZXWL2X2GB";    
-
-// OLD URL
-//String url = "34.69.212.37/agroiot/post.php";
 
 String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
