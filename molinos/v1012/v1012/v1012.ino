@@ -1,5 +1,5 @@
 /* VERSION 1012
-* ULTIMA UPDATE: 17/01/22
+* ULTIMA UPDATE: 17/12/21
 * AUTOR: LUIS MANUEL VERA
 /*
 // DHT CONFIG
@@ -27,14 +27,15 @@ unsigned long tiempoSegundos = 0;
 String operadora = "personal";
 
 //APN ORIGINAL y CONECTIVIDAD CLARO
-String apn   = "igprs.claro.com.ar";
-String apn_u = "clarogprs";
-String apn_p = "clarogprs999";
+String apn_claro   = "igprs.claro.com.ar";
+String apn_u_claro = "clarogprs";
+String apn_p_claro = "clarogprs999";
+
 
 // APN ORIGINAL y CONECTIVIDAD PERSONAL
-String apn   = "datos.personal.com";
-String apn_u = "datos";
-String apn_p = "datos";
+String apn_personal   = "internet.personal.com";
+String apn_u_personal = "internet";
+String apn_p_personal = "internet";
 
 // APN 2 PERSONAL
 
@@ -70,7 +71,7 @@ void setup()
   Serial.begin(9600);
   mySerial.begin(9600);
   mySerial.listen();
-  gsm_init();
+  gsm_init(operadora);
 
   // HC-SR04 CONFIG
   pinMode(PinTrig, OUTPUT);
@@ -112,11 +113,11 @@ void loop()
   Serial.println();
   delay(1000);
   
-  gsm_sendhttp(12, llenado);
-  gsm_recall();
+  gsm_sendhttp(67, llenado);
+  gsm_recall(operadora);
   
   delay(30*minutes);
-  gsm_recall();
+  gsm_recall(operadora);
 
   delay(5*seconds);
 }
@@ -195,7 +196,29 @@ void gsm_test(){
   delay(2000);  
   }
   
-void gsm_init(){
+void gsm_init(String operadora){
+
+  String apn;
+  String apn_u;
+  String apn_p;
+
+  if (operadora == "claro"){
+    apn = apn_claro;
+    apn_u = apn_u_claro;
+    apn_p = apn_p_claro;
+  }
+
+  else if(operadora = "personal"){
+    apn = apn_personal;
+    apn_u = apn_u_personal;
+    apn_p = apn_p_personal;
+  }
+
+  else if(operadora = "personal2"){
+    apn = apn_personal2;
+    apn_u = apn_u_personal2;
+    apn_p = apn_p_personal2;
+  }
 
   Serial.println("Inicializando modem ...");
 
@@ -299,7 +322,30 @@ void gsm_out(){
 
 }
 
-void gsm_recall(){
+void gsm_recall(String operadora){
+
+  String apn;
+  String apn_u;
+  String apn_p;
+
+  if (operadora == "claro"){
+    apn = apn_claro;
+    apn_u = apn_u_claro;
+    apn_p = apn_p_claro;
+  }
+
+  else if(operadora = "personal"){
+    apn = apn_personal;
+    apn_u = apn_u_personal;
+    apn_p = apn_p_personal;
+  }
+
+  else if(operadora = "personal2"){
+    apn = apn_personal2;
+    apn_u = apn_u_personal2;
+    apn_p = apn_p_personal2;
+  }
+  
   Serial.println("########## RECALLING... ##########");
 
   Serial.print("Señal del Modulo: ");
