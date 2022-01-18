@@ -34,6 +34,12 @@ String apn   = "datos.personal.com";
 String apn_u = "datos";
 String apn_p = "datos";
 
+// APN 2 PERSONAL
+
+String apn_personal2 = "datos.personal.com";
+String apn_u_personal2 = "datos";
+String apn_p_personal2 = "datos";
+
 String apiKey   = "2NE9RSVZXWL2X2GB";    
 
 String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
@@ -107,7 +113,7 @@ void loop()
   gsm_sendhttp(12, llenado);
   gsm_recall();
   
-  delay(5*seconds);
+  delay(30*minutes);
   gsm_recall();
 
   delay(5*seconds);
