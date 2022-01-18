@@ -24,6 +24,8 @@ unsigned long tiempo1 = 0;
 unsigned long tiempo2 = 0;
 unsigned long tiempoSegundos = 0;
 
+String operadora = "personal";
+
 //APN ORIGINAL y CONECTIVIDAD CLARO
 String apn   = "igprs.claro.com.ar";
 String apn_u = "clarogprs";
