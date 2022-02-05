@@ -1,5 +1,5 @@
 /* VERSION 1012
-* ULTIMA UPDATE: 17/12/21
+* ULTIMA UPDATE: 05/02/22
 * AUTOR: LUIS MANUEL VERA
 /*
 // DHT CONFIG
@@ -24,26 +24,21 @@ unsigned long tiempo1 = 0;
 unsigned long tiempo2 = 0;
 unsigned long tiempoSegundos = 0;
 
-String operadora = "personal";
-
 //APN ORIGINAL y CONECTIVIDAD CLARO
-String apn_claro   = "igprs.claro.com.ar";
-String apn_u_claro = "clarogprs";
-String apn_p_claro = "clarogprs999";
+String apn   = "igprs.claro.com.ar";
+String apn_u = "clarogprs";
+String apn_p = "clarogprs999";
 
 
 // APN ORIGINAL y CONECTIVIDAD PERSONAL
-String apn_personal   = "internet.personal.com";
-String apn_u_personal = "internet";
-String apn_p_personal = "internet";
-
-// APN 2 PERSONAL
-
-String apn_personal2 = "datos.personal.com";
-String apn_u_personal2 = "datos";
-String apn_p_personal2 = "datos";
+String apn   = "datos.personal.com";
+String apn_u = "datos";
+String apn_p = "datos";
 
 String apiKey   = "2NE9RSVZXWL2X2GB";    
+
+// OLD URL
+//String url = "34.69.212.37/agroiot/post.php";
 
 String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
@@ -51,7 +46,7 @@ String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
 const float desc_alras = 0.00;
 const float alto_tanque = 100;
-const float diam_tanque = 200;
+const float diam_tanque = 560; 
 
 const double pi = 3.14159;
 
@@ -71,7 +66,7 @@ void setup()
   Serial.begin(9600);
   mySerial.begin(9600);
   mySerial.listen();
-  gsm_init(operadora);
+  gsm_init();
 
   // HC-SR04 CONFIG
   pinMode(PinTrig, OUTPUT);
@@ -108,16 +103,16 @@ void loop()
  // float hum1 = dht.readHumidity();  
  
   Serial.println("########## RESULTADOS: ##########");
-  Serial.print(llenado);
+  Serial.print(promedio(llenado));
   Serial.print("%");
   Serial.println();
   delay(1000);
   
-  gsm_sendhttp(67, llenado);
-  gsm_recall(operadora);
+  gsm_sendhttp(12, llenado);
+  gsm_recall();
   
-  delay(30*minutes);
-  gsm_recall(operadora);
+  delay(5*seconds);
+  gsm_recall();
 
   delay(5*seconds);
 }
@@ -196,29 +191,7 @@ void gsm_test(){
   delay(2000);  
   }
   
-void gsm_init(String operadora){
-
-  String apn;
-  String apn_u;
-  String apn_p;
-
-  if (operadora == "claro"){
-    apn = apn_claro;
-    apn_u = apn_u_claro;
-    apn_p = apn_p_claro;
-  }
-
-  else if(operadora = "personal"){
-    apn = apn_personal;
-    apn_u = apn_u_personal;
-    apn_p = apn_p_personal;
-  }
-
-  else if(operadora = "personal2"){
-    apn = apn_personal2;
-    apn_u = apn_u_personal2;
-    apn_p = apn_p_personal2;
-  }
+void gsm_init(){
 
   Serial.println("Inicializando modem ...");
 
@@ -322,30 +295,7 @@ void gsm_out(){
 
 }
 
-void gsm_recall(String operadora){
-
-  String apn;
-  String apn_u;
-  String apn_p;
-
-  if (operadora == "claro"){
-    apn = apn_claro;
-    apn_u = apn_u_claro;
-    apn_p = apn_p_claro;
-  }
-
-  else if(operadora = "personal"){
-    apn = apn_personal;
-    apn_u = apn_u_personal;
-    apn_p = apn_p_personal;
-  }
-
-  else if(operadora = "personal2"){
-    apn = apn_personal2;
-    apn_u = apn_u_personal2;
-    apn_p = apn_p_personal2;
-  }
-  
+void gsm_recall(){
   Serial.println("########## RECALLING... ##########");
 
   Serial.print("Señal del Modulo: ");
@@ -383,4 +333,22 @@ void gsm_recall(String operadora){
   delay(1000);
   
   delay(10*seconds);
+}
+
+float promedio(float medida){
+
+  float promedio = 0;
+  float total_medida = 0;
+
+  for (int muestras = 1; muestras <= 10; muestras++){
+    
+    total_medida = total_medida + medida;
+    promedio = total_medida / muestras;
+       
+  }
+
+  if (promedio < 0){return -1;}
+
+  return promedio;
+  
 }
