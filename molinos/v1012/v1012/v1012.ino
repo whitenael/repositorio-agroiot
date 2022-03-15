@@ -30,7 +30,7 @@ String operadora = "personal";
 String apn_claro   = "igprs.claro.com.ar";
 String apn_u_claro = "clarogprs";
 String apn_p_claro = "clarogprs999";
-
+pin
 
 // APN ORIGINAL y CONECTIVIDAD PERSONAL
 String apn_personal   = "internet.personal.com";
@@ -73,9 +73,9 @@ void setup()
   mySerial.listen();
   gsm_init(operadora);
 
-  // HC-SR04 CONFIG
+  // SRT-04 CONFIG
   pinMode(PinTrig, OUTPUT);
-  pinMode(PinEcho, INPUT);
+  pinMode(PinEcho, INPUT_PULLUP);
 
   // DHT22 CONFIG
   // pinMode(DHTPIN, INPUT_PULLUP);
