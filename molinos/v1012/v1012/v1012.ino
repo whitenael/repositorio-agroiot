@@ -30,7 +30,6 @@ String operadora = "personal";
 String apn_claro   = "igprs.claro.com.ar";
 String apn_u_claro = "clarogprs";
 String apn_p_claro = "clarogprs999";
-pin
 
 // APN ORIGINAL y CONECTIVIDAD PERSONAL
 String apn_personal   = "internet.personal.com";
@@ -85,7 +84,7 @@ void loop()
 {
   iniciarTrigger();
  
-  unsigned long tiempo = pulseIn(PinEcho, HIGH); 
+  unsigned long tiempo = pulseIn(PinEcho, HIGH, 26000); 
   
   distancia = tiempo * 0.000001 * VelSon / 2.0;
 
