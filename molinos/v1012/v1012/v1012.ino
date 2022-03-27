@@ -1,19 +1,11 @@
 /* VERSION 1012
-* ULTIMA UPDATE: 05/02/22
+* ULTIMA UPDATE: 27/03/22
 * AUTOR: LUIS MANUEL VERA
 /*
-// DHT CONFIG
-#include <DHT.h>
-#include <DHT_U.h>
-
-#define DHTPIN 6
-#define DHTTYPE 22
-#define vent1 4
-
-DHT dht(DHTPIN, DHTTYPE);
 */
 // CONVERSOR DE TIEMPO
 #include <SoftwareSerial.h>
+#include <NewPing.h>
 SoftwareSerial mySerial(13,12); // RX, TX
 
 unsigned long seconds = 1000L; //unsigned = solo almacena numeros positivos
@@ -48,7 +40,7 @@ String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
 // CONSTANTES TANQUE (especificadas por el cliente) / expresadas en CM
 
-const float desc_alras = 0.00;
+const float desc_alras = 30; // variable a confirmar
 const float alto_tanque = 100;
 const float diam_tanque = 560;
 
@@ -59,10 +51,10 @@ double pmin = 25.00;
 const int PinTrig = 6;
 const int PinEcho = 7;
 
-// Constante velocidad sonido en cm/s
-const float VelSon = 34000.0;
+NewPing sonar (PinTrig, PinEcho);
 
 float distancia;
+int microSeconds;
 
 void setup()
 {
@@ -82,11 +74,14 @@ void setup()
 }
 void loop()
 {
-  iniciarTrigger();
- 
-  unsigned long tiempo = pulseIn(PinEcho, HIGH, 26000); 
-  
-  distancia = tiempo * 0.000001 * VelSon / 2.0;
+  // CALCULO DE DISTANCIA
+
+  float distanciaChequeada;
+
+  microSeconds = sonar.ping_median(50);
+  distancia = sonar.convert_cm(microSeconds);
+
+  distanciaChequeada = chequearMedida(distancia);
 
   // CALCULO DE VOLUMEN
 
@@ -97,22 +92,17 @@ void loop()
 
   // calcular el llenado real
 
-  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * (alto_tanque - (distancia - desc_alras));
+  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * (alto_tanque - (distanciaChequeada - desc_alras));
   vol_lit  = vol_cm3 / 1000;         
   llenado = vol_lit * 100.00 / auxiliar; 
-
-  float pt1 = llenado;
-
-  //float temp1 = dht.readTemperature();
- // float hum1 = dht.readHumidity();  
  
   Serial.println("########## RESULTADOS: ##########");
-  Serial.print(promedio(llenado));
+  Serial.print(llenado);
   Serial.print("%");
   Serial.println();
   delay(1000);
   
-  gsm_sendhttp(67, promedio(llenado));
+  gsm_sendhttp(67, llenado);
   gsm_recall(operadora);
   
   delay(30*minutes);
@@ -121,19 +111,34 @@ void loop()
   delay(5*seconds);
 }
 
-// Método que inicia la secuencia del Trigger para comenzar a medir
-void iniciarTrigger()
-{
-  // Ponemos el Triiger en estado bajo y esperamos 2 ms
-  digitalWrite(PinTrig, LOW);
-  delayMicroseconds(2);
+// chequear veracidad de la medida
+
+float chequearMedida(float medida){
   
-  // Ponemos el pin Trigger a estado alto y esperamos 10 ms
-  digitalWrite(PinTrig, HIGH);
-  delayMicroseconds(10);
+  int counter = 0;
+
+  if (medida < 0 || medida > 100)
+  {
+    int datoNuevo;
+    while ((counter < 10) & ~((datoNuevo > 0 & datoNuevo < 100)))
+    {
+      Serial.print("Retomando muestra intento #");
+      Serial.print(counter);
+      Serial.println();
+      microSeconds = sonar.ping_median(50);
+      datoNuevo = sonar.convert_cm(microSeconds);
+      Serial.println(datoNuevo);
+      
+      counter++;
+      delay(200);
+    }
+
+    if (counter == 10){return -1;}
+    else{return datoNuevo;}
+  }
+
+  return medida;
   
-  // Comenzamos poniendo el pin Trigger en estado bajo
-  digitalWrite(PinTrig, LOW);
 }
 
 // COMUNICACION CON EL SERVIDOR
@@ -382,22 +387,4 @@ void gsm_recall(String operadora){
   delay(1000);
   
   delay(10*seconds);
-}
-
-float promedio(float medida){
-
-  float promedio = 0;
-  float total_medida = 0;
-
-  for (int muestras = 1; muestras <= 10; muestras++){
-    
-    total_medida = total_medida + medida;
-    promedio = total_medida / muestras;
-       
-  }
-
-  if (promedio < 0){return -1;}
-
-  return promedio;
-  
 }
