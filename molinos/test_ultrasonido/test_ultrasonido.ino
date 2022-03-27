@@ -1,3 +1,5 @@
+#include <EEPROM.h>
+
 const int PinTrig = 2;
 const int PinEcho = 3;
 
@@ -5,6 +7,8 @@ const int PinEcho = 3;
 const float VelSon = 34000.0;
 
 float distancia;
+int eeAdress = 0;
+float cont[10] = {0,0,0,0,0,0,0,0,0,0,0}; // el ultimo bit sirve de referencia {inicio[0], dato, dato, dato , dato, dato, dato, dato, dato, dato, ref[0]}
 
 void setup()
 {
@@ -14,6 +18,14 @@ void setup()
   pinMode(PinTrig, OUTPUT);
   // Ponemos el pin Echo en modo entrada
   pinMode(PinEcho, INPUT_PULLUP);
+
+  Serial.println("Seteando memoria.. ");
+
+  for (int i = 0; i < EEPROM.length(); i++){
+    EEPROM.write(i,0); // seteamos la memoria EEPROM a 0
+  }
+
+  Serial.println("Memoria seteada");
 }
 void loop()
 {
@@ -26,11 +38,24 @@ void loop()
   // por eso se multiplica por 0.000001
   distancia = tiempo * 0.000001 * VelSon / 2.0;
   
-  Serial.print(promedio(distancia));
-  Serial.print("cm");
-  Serial.println();
-  delay(100);
+  if (eeAdress >= EEPROM.length()) {eeAdress = 0;}  
+
+  // escribir dato en una posicion de memoria
+
+  EEPROM.put(eeAdress, distancia); //grabamos
+  float medida = EEPROM.get(eeAdress, distancia); //retornamos
+
+  eeAdress += sizeof(float); //movemos una posicion de memoria
+  
+  // iterar toda la memoria (de 4 bits en 4 bits)
+
+  setearMedidas(cont, medida, eeAdress);
+
+  // a cada posicion asignarle una posicion en el array cont
+
+  delay(500);
 }
+
 
 // Método que inicia la secuencia del Trigger para comenzar a medir
 void iniciarTrigger()
@@ -53,10 +78,15 @@ float promedio(float medida){
   float total_medida = 0;
   int counter = 0;
 
-  for (int muestras = 1; muestras <= 100; muestras++){
+  for (int muestras = 1; muestras <= 10; muestras++){
     
     total_medida = total_medida + medida;
     promedio = total_medida / muestras; 
+    Serial.print("Medida en loop: #");
+    Serial.println(muestras);
+    Serial.print(medida);
+    Serial.println();
+    delay(200);
   }
 
   if (promedio < 0 || promedio > 100)
@@ -82,4 +112,16 @@ float promedio(float medida){
 
   return promedio;
   
+}
+
+// iterar a traves de la memoria
+
+// cada dato en la memoria, debe ser guardado en un espacio del array
+
+void setearMedidas(float arr[], float medida, float address){
+
+  for (int i=0; i < 1024; i=i+4){
+    Serial.print();
+  }
+   
 }
