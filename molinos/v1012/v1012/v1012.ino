@@ -1,5 +1,5 @@
 /* VERSION 1012
-* ULTIMA UPDATE: 27/03/22
+* ULTIMA UPDATE: 25/04/22
 * AUTOR: LUIS MANUEL VERA
 /*
 */
@@ -53,6 +53,11 @@ const int PinEcho = 7;
 
 NewPing sonar (PinTrig, PinEcho);
 
+float vol_cm3;
+float vol_lit;
+float auxiliar;
+float llenado;
+
 float distancia;
 int microSeconds;
 
@@ -74,27 +79,17 @@ void setup()
 }
 void loop()
 {
-  // CALCULO DE DISTANCIA
+ // CALCULO DE DISTANCIA
 
   float distanciaChequeada;
 
   microSeconds = sonar.ping_median(50);
   distancia = sonar.convert_cm(microSeconds);
-
   distanciaChequeada = chequearMedida(distancia);
 
-  // CALCULO DE VOLUMEN
+  if (distanciaChequeada == -1){llenado=-1;}
 
-  float vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * alto_tanque;
-  float vol_lit  = vol_cm3 / 1000;
-  float auxiliar = vol_lit; //aux = 3141,6 Litros
-  float llenado = 100.00;
-
-  // calcular el llenado real
-
-  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * (alto_tanque - (distanciaChequeada - desc_alras));
-  vol_lit  = vol_cm3 / 1000;         
-  llenado = vol_lit * 100.00 / auxiliar; 
+  else{llenado = calcularLlenado(distanciaChequeada);}
  
   Serial.println("########## RESULTADOS: ##########");
   Serial.print(llenado);
@@ -105,22 +100,27 @@ void loop()
   gsm_sendhttp(67, llenado);
   gsm_recall(operadora);
   
-  delay(30*minutes);
+  delay(10*seconds);
   gsm_recall(operadora);
 
   delay(5*seconds);
 }
 
-// chequear veracidad de la medida
+// Chequeamos que la medida este dentro de un rango valido
+
+// Caso contrario, hacer una nueva medida
 
 float chequearMedida(float medida){
+
+  Serial.print("Medida actual: ");
+  Serial.println(medida);
   
   int counter = 0;
+  int datoNuevo = medida;
 
-  if (medida < 0 || medida > 100)
-  {
-    int datoNuevo;
-    while ((counter < 10) & ~((datoNuevo > 0 & datoNuevo < 100)))
+  if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
+  {  
+    while ((counter < 10) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
     {
       Serial.print("Retomando muestra intento #");
       Serial.print(counter);
@@ -134,11 +134,33 @@ float chequearMedida(float medida){
     }
 
     if (counter == 10){return -1;}
-    else{return datoNuevo;}
+    else{
+      Serial.print("Dato recolectado: ");
+      Serial.println(datoNuevo);
+      return datoNuevo;}
   }
 
-  return medida;
+  else {
+    return medida;
+  } 
   
+}
+
+float calcularLlenado(float distanciaChequeada){
+  // CALCULO DE VOLUMEN
+
+  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * alto_tanque;
+  vol_lit  = vol_cm3 / 1000;
+  auxiliar = vol_lit; //aux = 3141,6 Litros
+  llenado = 100.00;
+
+  // calcular el llenado real
+
+  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * (alto_tanque - (distanciaChequeada - desc_alras));
+  vol_lit  = vol_cm3 / 1000;         
+  llenado = vol_lit * 100.00 / auxiliar; 
+
+  return llenado;
 }
 
 // COMUNICACION CON EL SERVIDOR
