@@ -6,7 +6,7 @@
 // CONVERSOR DE TIEMPO
 #include <SoftwareSerial.h>
 #include <NewPing.h>
-SoftwareSerial mySerial(13,12); // RX, TX
+SoftwareSerial mySerial(12,13); // RX, TX
 
 unsigned long seconds = 1000L; //unsigned = solo almacena numeros positivos
 unsigned long minutes = seconds * 60;
@@ -40,7 +40,7 @@ String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
 // CONSTANTES TANQUE (especificadas por el cliente) / expresadas en CM
 
-const float desc_alras = 30; // variable a confirmar
+const float desc_alras = 40; // variable a confirmar
 const float alto_tanque = 100;
 const float diam_tanque = 560;
 
@@ -83,7 +83,7 @@ void loop()
 
   float distanciaChequeada;
 
-  microSeconds = sonar.ping_median(50);
+  microSeconds = sonar.ping_median(10);
   distancia = sonar.convert_cm(microSeconds);
   distanciaChequeada = chequearMedida(distancia);
 
@@ -97,13 +97,13 @@ void loop()
   Serial.println();
   delay(1000);
   
-  gsm_sendhttp(67, llenado);
+  gsm_sendhttp(69, llenado);
   gsm_recall(operadora);
   
   delay(10*seconds);
   gsm_recall(operadora);
 
-  delay(5*seconds);
+  delay(30*minutes);
 }
 
 // Chequeamos que la medida este dentro de un rango valido
@@ -120,12 +120,12 @@ float chequearMedida(float medida){
 
   if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
   {  
-    while ((counter < 10) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
+    while ((counter < 50) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
     {
       Serial.print("Retomando muestra intento #");
       Serial.print(counter);
       Serial.println();
-      microSeconds = sonar.ping_median(50);
+      microSeconds = sonar.ping_median(10);
       datoNuevo = sonar.convert_cm(microSeconds);
       Serial.println(datoNuevo);
       
@@ -133,7 +133,7 @@ float chequearMedida(float medida){
       delay(200);
     }
 
-    if (counter == 10){return -1;}
+    if (counter == 50){return -1;}
     else{
       Serial.print("Dato recolectado: ");
       Serial.println(datoNuevo);
