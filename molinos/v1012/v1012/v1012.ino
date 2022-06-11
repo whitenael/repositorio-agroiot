@@ -42,7 +42,7 @@ String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
 const float desc_alras = 40; // variable a confirmar
 const float alto_tanque = 100;
-const float diam_tanque = 560;
+const float diam_tanque = 755;
 
 const double pi = 3.14159;
 
@@ -88,8 +88,10 @@ void loop()
   distanciaChequeada = chequearMedida(distancia);
 
   if (distanciaChequeada == -1){llenado=-1;}
+  
+  else if (distanciaChequeada == -2){llenado == -2};
 
-  else{llenado = calcularLlenado(distanciaChequeada);}
+  else{llenado = distanciaChequeada;}
  
   Serial.println("########## RESULTADOS: ##########");
   Serial.print(llenado);
@@ -117,8 +119,10 @@ float chequearMedida(float medida){
   
   int counter = 0;
   int datoNuevo = medida;
+  
+  if (medida == 0){return -2;}
 
-  if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
+  else if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
   {  
     while ((counter < 50) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
     {
