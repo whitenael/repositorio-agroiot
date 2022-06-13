@@ -40,24 +40,28 @@ String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
 // CONSTANTES TANQUE (especificadas por el cliente) / expresadas en CM
 
-const float desc_alras = 40; // variable a confirmar
-const float alto_tanque = 100;
+// #### INICIO VARIABLES PARA EL CALCULO DE MEDIDA #### //
+
+const float desc_alras = 40; // medida al pelo del agua
+const float alto_tanque = 100; // medidas del tanque
 const float diam_tanque = 755;
+
+float vol_cm3;
+float vol_lit;
+float auxiliar;
+float llenado;
 
 const double pi = 3.14159;
 
-double pmin = 25.00;
+double pmin = 25.00; 
+
+// #### FIN VARIABLES PARA EL CALCULO DE MEDIDA #### //
 
 const int PinTrig = 6;
 const int PinEcho = 7;
 const int idSensor = 70;
 
 NewPing sonar (PinTrig, PinEcho);
-
-float vol_cm3;
-float vol_lit;
-float auxiliar;
-float llenado;
 
 float distancia;
 int microSeconds;
@@ -121,7 +125,9 @@ float chequearMedida(float medida){
   int counter = 0;
   int datoNuevo = medida;
 
-  if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
+  if (medida == 0){return -2;}
+
+  else if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
   {  
     while ((counter < 50) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
     {
@@ -136,8 +142,6 @@ float chequearMedida(float medida){
       delay(200);
     }
 
-    if (medida == 0){return -2;}
-
     if (counter == 50){return -1;}
     else{
       Serial.print("Dato recolectado: ");
@@ -150,6 +154,11 @@ float chequearMedida(float medida){
   } 
   
 }
+// el modulo recibe la distancia (distanciaChequeada), y devuelve el porcentaje de llenado, 
+// En este modulo deberia procesarse la distancia que llega desde el sensor, y presentar el resultado en la app
+// RECORDAR: la distancia llega a este modulo SI Y SOLO SI, la medida es valida (es decir, es diferente a -1 o -2)
+// En tal caso de ser alguna de las excepciones, debera aplicarse un factor de correcion para que presente la medida anterior al cliente
+// Y preferiblemente, que alerte este estado de error al desarrollador
 
 float calcularLlenado(float distanciaChequeada){
   // CALCULO DE VOLUMEN
