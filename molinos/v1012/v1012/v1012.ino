@@ -1,5 +1,5 @@
 /* VERSION 1012
-* ULTIMA UPDATE: 23/05/22
+* ULTIMA UPDATE: 25/04/22
 * AUTOR: LUIS MANUEL VERA
 /*
 */
@@ -50,6 +50,7 @@ double pmin = 25.00;
 
 const int PinTrig = 6;
 const int PinEcho = 7;
+const int idSensor = 70;
 
 NewPing sonar (PinTrig, PinEcho);
 
@@ -88,8 +89,8 @@ void loop()
   distanciaChequeada = chequearMedida(distancia);
 
   if (distanciaChequeada == -1){llenado=-1;}
-  
-  else if (distanciaChequeada == -2){llenado == -2};
+
+  else if(distanciaChequeada == -2){llenado=-2;}
 
   else{llenado = distanciaChequeada;}
  
@@ -99,7 +100,7 @@ void loop()
   Serial.println();
   delay(1000);
   
-  gsm_sendhttp(69, llenado);
+  gsm_sendhttp(idSensor, llenado);
   gsm_recall(operadora);
   
   delay(10*seconds);
@@ -119,10 +120,8 @@ float chequearMedida(float medida){
   
   int counter = 0;
   int datoNuevo = medida;
-  
-  if (medida == 0){return -2;}
 
-  else if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
+  if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
   {  
     while ((counter < 50) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
     {
@@ -136,6 +135,8 @@ float chequearMedida(float medida){
       counter++;
       delay(200);
     }
+
+    if (medida == 0){return -2;}
 
     if (counter == 50){return -1;}
     else{
