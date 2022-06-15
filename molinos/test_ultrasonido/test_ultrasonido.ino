@@ -4,9 +4,14 @@ unsigned long seconds = 1000L; //unsigned = solo almacena numeros positivos
 unsigned long minutes = seconds * 60;
 unsigned long hours = minutes * 60;
 
-const float desc_alras = 50; // variable a confirmar
-const float alto_tanque = 200;
-const float diam_tanque = 440;
+const float desc_alras = 40; // variable a confirmar
+const float alto_tanque = 100;
+const float diam_tanque = 560;
+
+struct medida{
+  float value;
+  int validas;
+};
 
 float vol_cm3;
 float vol_lit;
@@ -33,77 +38,45 @@ void loop()
 { 
   // CALCULO DE DISTANCIA
 
-  float distanciaChequeada;
-
-  microSeconds = sonar.ping_median(50);
-  distancia = sonar.convert_cm(microSeconds);
-  distanciaChequeada = chequearMedida(distancia);
-
-  if (distanciaChequeada == -1){llenado=-1;}
-
-  else{llenado = calcularLlenado(distanciaChequeada);}
+  medida rep = tomarMedida();
 
   Serial.println("########## RESULTADOS: ##########");
-  Serial.print(llenado);
-  Serial.print("%");
+  Serial.print("Promedio de medidas: ");
+  Serial.println(rep.value);
+  Serial.print("Medidas validas: ");
+  Serial.println(rep.validas);
   Serial.println();
-  delay(1000);
+  delay(100);
 
 }
 
-// Chequeamos que la medida este dentro de un rango valido
+// Tenemos que tomar un total de 12 medidas: 4 por minuto 
+// De estas 12 medidas, descartamos las invalidas, y nos quedamos con las validas y las sumamos a un contador
+// De estas validas, calculamos un promedio y lo devolvemos
 
-// Caso contrario, hacer una nueva medida
 
-float chequearMedida(float medida){
-
-  Serial.print("Medida actual: ");
-  Serial.println(medida);
+medida tomarMedida(){
+  int tiempo = 0;
+  float datoNuevo;
+  float totalValidas = 0;
+  float promedio;
+  int contadorValidas = 0; 
+  boolean esValida = (datoNuevo > desc_alras | datoNuevo < (alto_tanque + desc_alras));
   
-  int counter = 0;
-  int datoNuevo = medida;
-
-  if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
-  {  
-    while ((counter < 10) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
-    {
-      Serial.print("Retomando muestra intento #");
-      Serial.print(counter);
-      Serial.println();
-      microSeconds = sonar.ping_median(50);
-      datoNuevo = sonar.convert_cm(microSeconds);
-      Serial.println(datoNuevo);
-      
-      counter++;
-      delay(200);
+  while (tiempo < 3){
+    microSeconds = sonar.ping_median(10);
+    distancia = sonar.convert_cm(microSeconds);
+    datoNuevo = distancia;
+    if (esValida){
+       contadorValidas++;
+       totalValidas = totalValidas + datoNuevo;
     }
-
-    if (counter == 10){return -1;}
-    else{
-      Serial.print("Dato recolectado: ");
-      Serial.println(datoNuevo);
-      return datoNuevo;}
+    tiempo++;
+    delay(15*seconds);
   }
+  promedio = totalValidas / contadorValidas;
 
-  else {
-    return medida;
-  } 
-  
-}
+  medida m = {promedio, contadorValidas};
 
-float calcularLlenado(float distanciaChequeada){
-  // CALCULO DE VOLUMEN
-
-  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * alto_tanque;
-  vol_lit  = vol_cm3 / 1000;
-  auxiliar = vol_lit; //aux = 3141,6 Litros
-  llenado = 100.00;
-
-  // calcular el llenado real
-
-  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * (alto_tanque - (distanciaChequeada - desc_alras));
-  vol_lit  = vol_cm3 / 1000;         
-  llenado = vol_lit * 100.00 / auxiliar; 
-
-  return llenado;
+  return m;
 }
