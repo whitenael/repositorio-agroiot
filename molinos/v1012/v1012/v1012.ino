@@ -46,6 +46,11 @@ const float desc_alras = 40; // medida al pelo del agua
 const float alto_tanque = 100; // medidas del tanque
 const float diam_tanque = 755;
 
+struct medida{
+  float value;
+  int validas;
+};
+
 float vol_cm3;
 float vol_lit;
 float auxiliar;
@@ -86,95 +91,62 @@ void loop()
 {
  // CALCULO DE DISTANCIA
 
-  float distanciaChequeada;
+  medida rep = tomarMedida();
 
-  microSeconds = sonar.ping_median(10);
-  distancia = sonar.convert_cm(microSeconds);
-  distanciaChequeada = chequearMedida(distancia);
-
-  if (distanciaChequeada == -1){llenado=-1;}
-
-  else if(distanciaChequeada == -2){llenado=-2;}
-
-  else{llenado = distanciaChequeada;}
- 
   Serial.println("########## RESULTADOS: ##########");
-  Serial.print(llenado);
-  Serial.print("%");
+  Serial.print("Promedio de medidas: ");
+  Serial.println(rep.value);
+  Serial.print("Medidas validas: ");
+  Serial.println(rep.validas);
   Serial.println();
   delay(1000);
   
-  gsm_sendhttp(idSensor, llenado);
-  gsm_recall(operadora);
-  
-  delay(10*seconds);
+  gsm_sendhttp(idSensor, rep.value, rep.validas);
   gsm_recall(operadora);
 
   delay(30*minutes);
 }
 
-// Chequeamos que la medida este dentro de un rango valido
+// Tenemos que tomar un total de 12 medidas: 4 por minuto 
+// De estas 12 medidas, descartamos las invalidas, y nos quedamos con las validas y las sumamos a un contador
+// De estas validas, calculamos un promedio y lo devolvemos
 
-// Caso contrario, hacer una nueva medida
-
-float chequearMedida(float medida){
-
-  Serial.print("Medida actual: ");
-  Serial.println(medida);
+medida tomarMedida(){
+  int tiempo = 0;
+  float datoNuevo;
+  float totalValidas = 0; float totalInvalidas = 0;
+  float promedio;
+  int contadorValidas = 0; 
   
-  int counter = 0;
-  int datoNuevo = medida;
-
-  if (medida == 0){return -2;}
-
-  else if (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras))
-  {  
-    while ((counter < 50) & (datoNuevo < desc_alras | datoNuevo > (alto_tanque + desc_alras)))
-    {
-      Serial.print("Retomando muestra intento #");
-      Serial.print(counter);
-      Serial.println();
-      microSeconds = sonar.ping_median(10);
-      datoNuevo = sonar.convert_cm(microSeconds);
-      Serial.println(datoNuevo);
-      
-      counter++;
-      delay(200);
+  while (tiempo < 12){
+    Serial.print("TIEMPO ");
+    Serial.println(tiempo);
+    microSeconds = sonar.ping_median(10);
+    distancia = sonar.convert_cm(microSeconds);
+    datoNuevo = distancia;
+    Serial.print("Tomando Medida: ");
+    Serial.println(datoNuevo);
+    if (((datoNuevo > desc_alras) & (datoNuevo < (alto_tanque + desc_alras)))){
+       contadorValidas++;
+       totalValidas = totalValidas + datoNuevo;
+       Serial.print("Medidas validas encontrada: ");
+       Serial.println(contadorValidas);
     }
-
-    if (counter == 50){return -1;}
-    else{
-      Serial.print("Dato recolectado: ");
-      Serial.println(datoNuevo);
-      return datoNuevo;}
+    else {
+      totalInvalidas = totalInvalidas + datoNuevo;
+      Serial.println("Medida invalidas encontrada ");
+    }
+    tiempo++;
+    delay(15*seconds);
   }
+  if (contadorValidas != 0)
+    promedio = totalValidas / contadorValidas;
+  else
+    promedio = totalInvalidas / 12;
+    
+  medida m = {promedio, contadorValidas};
 
-  else {
-    return medida;
-  } 
-  
-}
-// el modulo recibe la distancia (distanciaChequeada), y devuelve el porcentaje de llenado, 
-// En este modulo deberia procesarse la distancia que llega desde el sensor, y presentar el resultado en la app
-// RECORDAR: la distancia llega a este modulo SI Y SOLO SI, la medida es valida (es decir, es diferente a -1 o -2)
-// En tal caso de ser alguna de las excepciones, debera aplicarse un factor de correcion para que presente la medida anterior al cliente
-// Y preferiblemente, que alerte este estado de error al desarrollador
-
-float calcularLlenado(float distanciaChequeada){
-  // CALCULO DE VOLUMEN
-
-  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * alto_tanque;
-  vol_lit  = vol_cm3 / 1000;
-  auxiliar = vol_lit; //aux = 3141,6 Litros
-  llenado = 100.00;
-
-  // calcular el llenado real
-
-  vol_cm3 = pi * (diam_tanque * diam_tanque) / 4 * (alto_tanque - (distanciaChequeada - desc_alras));
-  vol_lit  = vol_cm3 / 1000;         
-  llenado = vol_lit * 100.00 / auxiliar; 
-
-  return llenado;
+  return m;
 }
 
 // COMUNICACION CON EL SERVIDOR
@@ -308,7 +280,7 @@ void gsm_init(String operadora){
   delay(10*seconds);
 }
 
-void gsm_sendhttp(int value1, float value2){
+void gsm_sendhttp(int value1, float value2, int value3){
   
   mySerial.listen();  
  
@@ -329,7 +301,7 @@ void gsm_sendhttp(int value1, float value2){
   print_gsm_status();
   delay(1000);
   
-  String PostData = "data0="+apiKey+"&data1="+String(value1)+"&data2="+String(value2,3);
+  String PostData = "data0="+apiKey+"&data1="+String(value1)+"&data2="+String(value2,3)+"&data3="+String(value3);
   
   mySerial.println("AT+HTTPDATA=" + String(PostData.length()) + ",10000");
   print_gsm_status();
