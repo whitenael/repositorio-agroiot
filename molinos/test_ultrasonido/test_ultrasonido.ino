@@ -46,7 +46,7 @@ void loop()
   Serial.print("Medidas validas: ");
   Serial.println(rep.validas);
   Serial.println();
-  delay(100);
+  delay(1000);
 
 }
 
@@ -58,24 +58,37 @@ void loop()
 medida tomarMedida(){
   int tiempo = 0;
   float datoNuevo;
-  float totalValidas = 0;
+  float totalValidas = 0; float totalInvalidas = 0;
   float promedio;
   int contadorValidas = 0; 
-  boolean esValida = (datoNuevo > desc_alras | datoNuevo < (alto_tanque + desc_alras));
+  boolean esValida = false;
   
-  while (tiempo < 3){
+  while (tiempo < 12){
+    Serial.print("TIEMPO ");
+    Serial.println(tiempo);
     microSeconds = sonar.ping_median(10);
     distancia = sonar.convert_cm(microSeconds);
     datoNuevo = distancia;
-    if (esValida){
+    Serial.print("Tomando Medida: ");
+    Serial.println(datoNuevo);
+    if (((datoNuevo > desc_alras) & (datoNuevo < (alto_tanque + desc_alras)))){
        contadorValidas++;
        totalValidas = totalValidas + datoNuevo;
+       Serial.print("Medidas validas encontrada: ");
+       Serial.println(contadorValidas);
+    }
+    else {
+      totalInvalidas = totalInvalidas + datoNuevo;
+      Serial.println("Medida invalidas encontrada ");
     }
     tiempo++;
-    delay(15*seconds);
+    delay(1*seconds);
   }
-  promedio = totalValidas / contadorValidas;
-
+  if (contadorValidas != 0)
+    promedio = totalValidas / contadorValidas;
+  else
+    promedio = totalInvalidas / 12;
+    
   medida m = {promedio, contadorValidas};
 
   return m;
