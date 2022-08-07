@@ -30,9 +30,13 @@ String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
 const int idSensor = 70;
 
-const int ldrExc = A0;
-const int ldrReg = A1;
-const int ldrLow = A2;
+int ldrExc;
+int ldrReg;
+int ldrLow;
+
+const int ldrExcPin = A2;
+const int ldrRegPin = A1;
+const int ldrLowPin = A0;
 
 void setup() {
   
@@ -47,17 +51,11 @@ void setup() {
 
 void loop() {
 
-  /*
-  gsm_sendhttp(idSensor, rep.value, rep.validas);
-  gsm_recall(operadora);
+  ldrExc = analogRead(ldrExcPin);
+  ldrReg = analogRead(ldrRegPin);
+  ldrLow = analogRead(ldrLowPin);
   
-  delay(10*seconds);
-  gsm_recall(operadora);
-
-  delay(30*minutes);
-  */
-  
-  chequearLuces();
+  chequearLuces(ldrExc, ldrReg, ldrLow);
 
   Serial.print("Lectura Excelente: ");
   Serial.println(ldrExc);
@@ -72,18 +70,27 @@ void loop() {
   delay(500);
 }
 
-void chequearLuces(){
+void chequearLuces(int ldrExc, int ldrReg, int ldrLow){
   if (ldrExc > 200){
-    Serial.println("Estado excelente");
+    reportarEstado("Excelente");
   }
 
   if ((ldrReg > 200)&(ldrExc < 200)){
-    Serial.println("Estado regular");
+    reportarEstado("Regular");
   }
 
   if ((ldrLow > 200)&(ldrReg < 200)&(ldrExc < 200)){
-    Serial.println("Estado bajo");
+    reportarEstado("Bajo");
   }
+}
+
+void reportarEstado(String estado){
+  
+  gsm_sendhttp(idSensor, estado);
+  gsm_recall(operadora);
+  
+  delay(10*seconds);
+  gsm_recall(operadora);
 }
 
 // COMUNICACION CON EL SERVIDOR
@@ -217,7 +224,7 @@ void gsm_init(String operadora){
   delay(10*seconds);
 }
 
-void gsm_sendhttp(int value1, float value2, int value3){
+void gsm_sendhttp(int value1, String value2){
   
   mySerial.listen();  
  
@@ -238,7 +245,7 @@ void gsm_sendhttp(int value1, float value2, int value3){
   print_gsm_status();
   delay(1000);
   
-  String PostData = "data0="+apiKey+"&data1="+String(value1)+"&data2="+String(value2,3)+"&data3="+String(value3);
+  String PostData = "data0="+apiKey+"&data1="+String(value1)+"&data2="+value2;
   
   mySerial.println("AT+HTTPDATA=" + String(PostData.length()) + ",10000");
   print_gsm_status();
