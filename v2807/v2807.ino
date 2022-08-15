@@ -1,5 +1,4 @@
 #include <SoftwareSerial.h>
-#include <NewPing.h>
 SoftwareSerial mySerial(12,13); // RX, TX
 
 unsigned long seconds = 1000L; //unsigned = solo almacena numeros positivos
@@ -28,60 +27,107 @@ String apiKey   = "2NE9RSVZXWL2X2GB";
 
 String url = "www.agroiot.com.ar/servicios/sensores/cargar/muestra";
 
-const int idSensor = 70;
-
-int ldrExc;
-int ldrReg;
-int ldrLow;
+const int idSensor = 71;
 
 const int ldrExcPin = A2;
 const int ldrRegPin = A1;
 const int ldrLowPin = A0;
 
+int ldrExc = 0; 
+int ldrReg = 0; 
+int ldrLow = 0;
+
+int factorPromedio = 10;
+int factorDesviacion = 50;
+
+// TIPO DE DATO PARA MEDIDAS 
+
+struct medida{
+  int ldrHigh;
+  int ldrReg;
+  int ldrLow;
+};
+
 void setup() {
   
   Serial.begin(9600);
-  mySerial.begin(9600);
-  mySerial.listen();
-  gsm_init(operadora);
+  //mySerial.begin(9600);
+  //mySerial.listen();
+  //gsm_init(operadora);
   pinMode(ldrExc, INPUT);
   pinMode(ldrReg, INPUT);
   pinMode(ldrLow, INPUT);
 }
 
 void loop() {
-
-  ldrExc = analogRead(ldrExcPin);
-  ldrReg = analogRead(ldrRegPin);
-  ldrLow = analogRead(ldrLowPin);
+  chequearEstado();
   
-  chequearLuces(ldrExc, ldrReg, ldrLow);
-
-  Serial.print("Lectura Excelente: ");
-  Serial.println(ldrExc);
-  Serial.println();
-  Serial.print("Lectura regular: ");
-  Serial.println(ldrReg);
-  Serial.println();
-  Serial.print("Lectura baja: ");
-  Serial.println(ldrLow);
-  Serial.println(" ------------ ");
-  
-  delay(500);
+  delay(30*minutes);
 }
 
-void chequearLuces(int ldrExc, int ldrReg, int ldrLow){
-  if (ldrExc > 200){
-    reportarEstado("Excelente");
+void chequearEstado(){
+  medida ms = tomarPromMedidas();
+  Serial.println("Calculando valores de estado...");
+  delay(100);
+  
+  if(ms.ldrHigh > factorDesviacion) {
+    //reportarEstado("Excelente");
+    Serial.println("Excelente");
   }
 
-  if ((ldrReg > 200)&(ldrExc < 200)){
-    reportarEstado("Regular");
+  else if ((ms.ldrHigh < factorDesviacion)&(ms.ldrReg > factorDesviacion)){
+    //reportarEstado("Regular"); 
+    Serial.println("Regular");
   }
 
-  if ((ldrLow > 200)&(ldrReg < 200)&(ldrExc < 200)){
-    reportarEstado("Bajo");
+  else if ((ms.ldrHigh < factorDesviacion)&(ms.ldrReg < factorDesviacion)&(ms.ldrLow > factorDesviacion)){
+    //reportarEstado("Bajo");
+    Serial.println("Bajo");
   }
+
+  else{
+    //reportarEstado("Desconectado");
+    Serial.println("Desconectado");
+  }
+}
+
+medida tomarPromMedidas(){  //retorna promedio de 10 medidas
+  int ldrExcTotal = 0;   int ldrRegTotal = 0;   int ldrLowTotal = 0;
+  int promedioExc, promedioReg, promedioLow;
+  int contadorMedida = 0;
+  
+  while (contadorMedida < factorPromedio){
+    ldrExc = analogRead(ldrExcPin);
+    ldrReg = analogRead(ldrRegPin);
+    ldrLow = analogRead(ldrLowPin);
+
+    ldrExcTotal = ldrExcTotal + ldrExc;
+    ldrRegTotal = ldrRegTotal + ldrReg;
+    ldrLowTotal = ldrLowTotal + ldrLow;
+
+    contadorMedida++;
+
+    Serial.print("Contando medida...");
+    Serial.println(contadorMedida);
+    Serial.print("Medida excelente: ");
+    Serial.println(ldrExc);
+    Serial.print("Medida regular: ");
+    Serial.println(ldrReg);
+    Serial.print("Medida baja: ");
+    Serial.println(ldrLow);
+    Serial.println();
+
+    delay(1000);
+  }
+
+  promedioExc = ldrExcTotal / factorPromedio;
+  promedioReg = ldrRegTotal / factorPromedio;
+  promedioLow = ldrLowTotal / factorPromedio;
+
+  mostrarMedidas(promedioExc, promedioReg, promedioLow);
+  
+  medida m = {promedioExc, promedioReg, promedioLow};
+  return m;
 }
 
 void reportarEstado(String estado){
@@ -91,6 +137,20 @@ void reportarEstado(String estado){
   
   delay(10*seconds);
   gsm_recall(operadora);
+}
+
+void mostrarMedidas(int value1, int value2, int value3){
+  Serial.print("Lectura Excelente: ");
+  Serial.println(value1);
+  Serial.println();
+  Serial.print("Lectura regular: ");
+  Serial.println(value2);
+  Serial.println();
+  Serial.print("Lectura baja: ");
+  Serial.println(value3);
+  Serial.println(" ------------ ");
+
+  delay(500);
 }
 
 // COMUNICACION CON EL SERVIDOR
